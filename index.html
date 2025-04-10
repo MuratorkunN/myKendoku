@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>myKendoku</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="appContainer">
+
+        <div id="menuScreen">
+            <img src="images/title.jpg" alt="myKendoku Title" class="title-image">
+            <img src="images/selecttext.jpg" alt="Select Grid Size" class="select-text-image">
+
+            <div id="sizeSelector">
+                <button class="sizeButton" data-size="4">4</button>
+                <button class="sizeButton" data-size="5">5</button>
+                <button class="sizeButton" data-size="6">6</button>
+                <button class="sizeButton" data-size="7">7</button>
+            </div>
+            <button id="startButton" disabled>START</button>
+        </div>
+
+        <div id="gameScreen" class="hidden">
+            <div id="topBar">
+                <button id="backButton">Back to Menu</button>
+                <div id="timer">Time : 00:00</div>
+            </div>
+
+            <div id="mainContent">
+                <div id="leftControls">
+                    <div class="move-controls">
+                        <button id="undoButton" class="controlButton moveButton">←</button>
+                        <button id="redoButton" class="controlButton moveButton">→</button>
+                    </div>
+                    <button id="clearButton" class="controlButton actionButton">CLEAR</button>
+                    <button id="checkButton" class="controlButton actionButton">CHECK</button>
+                </div>
+
+                <div id="gridContainer">
+                    </div>
+
+                <div id="rightControls">
+                    <div class="number-inputs">
+                        </div>
+                    <div class="extra-inputs">
+                        <button id="noteToggle" class="controlButton smallNumButton">
+                            <span class="note-char">¹²₃₄</span>
+                        </button>
+                        <button id="clearCellButton" class="controlButton smallNumButton">X</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="winPopup" class="hidden">
+                <div class="popup-content">
+                    <h2>Well Done!</h2>
+                    <p id="winDetails">Kendoku NxN</p>
+                    <p id="winTime">Time : 00:00</p>
+                    <button id="winBackToMenuButton">Back to Menu</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
