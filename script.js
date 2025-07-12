@@ -104,9 +104,115 @@ document.addEventListener('DOMContentLoaded', () => {
         saveState();
     }
 
+    // --- NEW SOLVER FUNCTION TO ENSURE UNIQUE SOLUTIONS ---
+    function countKendokuSolutions(size, cages) {
+        let solutionCount = 0;
+        const grid = Array.from({ length: size }, () => Array(size).fill(0));
+
+        const cellToCageMap = Array.from({ length: size }, () => Array(size).fill(null));
+        cages.forEach(cage => {
+            cage.cells.forEach(cell => {
+                cellToCageMap[cell.r][cell.c] = cage;
+            });
+        });
+
+        function isSafe(r, c, num) {
+            for (let i = 0; i < size; i++) {
+                if (grid[r][i] === num || grid[i][c] === num) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function checkCage(cage) {
+            const values = cage.cells.map(cell => grid[cell.r][cell.c]);
+            const filledCount = values.filter(v => v !== 0).length;
+
+            if (filledCount < cage.cells.length) {
+                // This is a partial check for pruning the search (optimization)
+                const filledValues = values.filter(v => v !== 0);
+                switch (cage.op) {
+                    case '+':
+                        const currentSum = filledValues.reduce((a, b) => a + b, 0);
+                        if (currentSum >= cage.target) return false;
+                        break;
+                    case '*':
+                        const currentProd = filledValues.reduce((a, b) => a * b, 1);
+                        if (currentProd > cage.target && !values.includes(1)) return false;
+                        if (cage.target % currentProd !== 0) return false;
+                        break;
+                    case '-':
+                    case '/':
+                         if (filledCount === 2) {
+                             const v1 = filledValues[0], v2 = filledValues[1];
+                             if (cage.op === '-') return Math.abs(v1-v2) === cage.target;
+                             const max = Math.max(v1,v2), min = Math.min(v1,v2);
+                             return min !== 0 && max % min === 0 && max/min === cage.target;
+                         }
+                        break;
+                }
+                return true;
+            }
+
+            // This is a full check for a completed cage
+            switch (cage.op) {
+                case '+':
+                    return values.reduce((a, b) => a + b, 0) === cage.target;
+                case '*':
+                    return values.reduce((a, b) => a * b, 1) === cage.target;
+                case '-':
+                    return Math.abs(values[0] - values[1]) === cage.target;
+                case '/':
+                    const max = Math.max(values[0], values[1]);
+                    const min = Math.min(values[0], values[1]);
+                    return min !== 0 && max % min === 0 && max / min === cage.target;
+                case '=':
+                    return values[0] === cage.target;
+                default:
+                    return false;
+            }
+        }
+
+        function solve() {
+            if (solutionCount > 1) return; // Optimization: stop after finding a second solution
+
+            let r = -1, c = -1;
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    if (grid[i][j] === 0) {
+                        r = i; c = j; break;
+                    }
+                }
+                if (r !== -1) break;
+            }
+
+            if (r === -1) {
+                solutionCount++;
+                return;
+            }
+
+            const cage = cellToCageMap[r][c];
+            for (let num = 1; num <= size; num++) {
+                if (isSafe(r, c, num)) {
+                    grid[r][c] = num;
+                    if (checkCage(cage)) {
+                        solve();
+                    }
+                    grid[r][c] = 0; // Backtrack
+                    if (solutionCount > 1) return; // Early exit
+                }
+            }
+        }
+
+        solve();
+        return solutionCount;
+    }
+
+    // --- MODIFIED PUZZLE GENERATION ---
     function generateAndSetupPuzzle(size) {
         let attempts = 0;
-        const MAX_ATTEMPTS = 20;
+        const MAX_ATTEMPTS = 20; // This might need to be higher for larger grids
 
         while (attempts < MAX_ATTEMPTS) {
              attempts++;
@@ -115,14 +221,22 @@ document.addEventListener('DOMContentLoaded', () => {
              cages = generateCages(size, solution);
 
              if (cages) {
-                 gridData = createGridData(size);
-                 if (gridData) {
-                     createGridUI(size);
-                     applyCageStyles();
-                     console.log("Puzzle generation successful.");
-                     return;
+                 console.log("Cages generated. Checking for unique solution...");
+                 const solutionCount = countKendokuSolutions(size, cages);
+                 console.log(`Solver found ${solutionCount} solution(s).`);
+
+                 if (solutionCount === 1) {
+                     gridData = createGridData(size);
+                     if (gridData) {
+                         createGridUI(size);
+                         applyCageStyles();
+                         console.log("Puzzle generation successful (unique solution confirmed).");
+                         return; // Success!
+                     } else {
+                          console.warn(`Grid data creation failed on attempt ${attempts}. Retrying...`);
+                     }
                  } else {
-                      console.warn(`Grid data creation failed on attempt ${attempts}. Retrying...`);
+                     console.warn(`Generated puzzle does not have a unique solution (${solutionCount} found). Retrying...`);
                  }
              } else {
                  console.warn(`Cage generation failed validation on attempt ${attempts}. Retrying...`);
